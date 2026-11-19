@@ -1,0 +1,703 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EduTrack | Öğrenci Ders Takip Sistemi</title>
+<style>
+:root {
+  --primary: #6658db;
+  --dark: #252552;
+  --bg: #f4f5fc;
+  --text: #222d4b;
+  --muted: #7c849b;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 245px;
+  padding: 30px 16px;
+  background: var(--dark);
+  color: white;
+  z-index: 5;
+}
+.logo {
+  font-size: 27px;
+  font-weight: 750;
+  margin: 12px 10px 45px;
+}
+.menu {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin: 8px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #eee;
+  text-align: left;
+  font-size: 16px;
+}
+.menu:hover, .menu.active {
+  background: var(--primary);
+  color: white;
+}
+.sidebar-footer {
+  position: absolute;
+  bottom: 25px;
+  left: 25px;
+  color: #aaa9d5;
+  font-size: 13px;
+}
+main {
+  margin-left: 245px;
+  padding: 36px;
+  max-width: 1800px;
+}
+h1 { margin: 0 0 10px; font-size: 32px; }
+h2 { margin: 0 0 24px; }
+.subtitle { color: var(--muted); }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+.tag {
+  background: #e9e6ff;
+  color: #5144bb;
+  padding: 12px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+.card, .panel {
+  background: white;
+  padding: 27px;
+  border-radius: 18px;
+  box-shadow: 0 6px 25px #2424540b;
+}
+.card-label { color: var(--muted); }
+.number {
+  font-size: 36px;
+  font-weight: 750;
+  color: var(--primary);
+  margin-top: 15px;
+}
+.card-icon { font-size: 26px; }
+.panel { margin-bottom: 24px; }
+.view { display: none; }
+.view.active { display: block; }
+.form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 15px;
+}
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #dce0ed;
+  border-radius: 10px;
+  outline: none;
+}
+input:focus { border-color: var(--primary); }
+.primary {
+  background: var(--primary);
+  color: white;
+  border: 0;
+  padding: 13px 22px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+.primary:hover { background: #5144bd; }
+.secondary {
+  background: #edf0f9;
+  border: 0;
+  padding: 12px 18px;
+  border-radius: 10px;
+}
+.danger {
+  background: #fce8e7;
+  color: #d63d38;
+  border: 0;
+  padding: 9px 14px;
+  border-radius: 8px;
+}
+.edit {
+  background: #ebe8ff;
+  color: #5144bb;
+  border: 0;
+  padding: 9px 14px;
+  border-radius: 8px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+th, td {
+  padding: 17px 12px;
+  text-align: left;
+  border-bottom: 1px solid #edf0f5;
+}
+th { color: var(--muted); }
+.search { max-width: 350px; margin-bottom: 20px; }
+.empty {
+  color: var(--muted);
+  padding: 25px 0;
+}
+.chart-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 50px;
+  gap: 15px;
+  align-items: center;
+  margin: 22px 0;
+}
+.chart-track {
+  height: 17px;
+  background: #eeeefa;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.chart-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7164e8, #a294ff);
+  border-radius: 20px;
+}
+.chart-name {
+  overflow-wrap: anywhere;
+}
+.notice {
+  background: #f0edff;
+  color: #5144bb;
+  padding: 17px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 1000px) {
+  .form-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 750px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    padding: 15px;
+  }
+  .logo { margin: 5px 0 15px; }
+  .sidebar-footer { display: none; }
+  .menu {
+    width: auto;
+    display: inline-block;
+    padding: 11px;
+    font-size: 14px;
+  }
+  main { margin-left: 0; padding: 20px; }
+  .cards { grid-template-columns: 1fr; }
+  .topbar { flex-wrap: wrap; }
+  .form-grid { grid-template-columns: 1fr; }
+  .chart-row { grid-template-columns: 95px 1fr 40px; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">🎓 EduTrack</div>
+  <button class="menu active" data-view="ana">
+    📊 Ana Panel
+  </button>
+  <button class="menu" data-view="dersler">
+    📚 Derslerim
+  </button>
+  <button class="menu" data-view="ekle">
+    ➕ Ders Ekle
+  </button>
+  <button class="menu" data-view="analiz">
+    📈 Not Analizi
+  </button>
+  <div class="sidebar-footer">
+    Öğrenci Ders Takip Sistemi
+  </div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div>
+      <h1 id="sayfaBaslik">Öğrenci Ders Takip Paneli</h1>
+      <p class="subtitle" id="sayfaAciklama">
+        Derslerini yönet, notlarını takip et.
+      </p>
+    </div>
+    <span class="tag">🎓 EduTrack</span>
+  </div>
+
+  <section id="ana" class="view active">
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📚</div>
+        <p class="card-label">Toplam Ders</p>
+        <div class="number" id="toplam">0</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <p class="card-label">Genel Ortalama</p>
+        <div class="number" id="ortalama">0.00</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏅</div>
+        <p class="card-label">Toplam Kredi</p>
+        <div class="number" id="kredi">0</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>👋 EduTrack'e Hoş Geldin!</h2>
+      <p>
+        Derslerini ekleyebilir, notlarını takip edebilir,
+        ortalamanı hesaplayabilir ve başarı grafiğini
+        görüntüleyebilirsin.
+      </p>
+      <button class="primary" data-go="ekle">
+        + Yeni Ders Ekle
+      </button>
+    </div>
+
+    <div class="panel">
+      <h2>📚 Ders Özeti</h2>
+      <div id="dersOzeti"></div>
+    </div>
+  </section>
+
+  <section id="dersler" class="view">
+    <div class="panel">
+      <h2>📚 Derslerim</h2>
+      <input
+        class="search"
+        id="arama"
+        placeholder="🔍 Ders adı veya kodu ara..."
+      >
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ders Adı</th>
+              <th>Kod</th>
+              <th>Kredi</th>
+              <th>Not</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="dersListesi"></tbody>
+        </table>
+      </div>
+      <p id="bosMesaj" class="empty" hidden>
+        Henüz görüntülenecek ders bulunamadı.
+      </p>
+    </div>
+  </section>
+
+  <section id="ekle" class="view">
+    <div class="panel">
+      <h2 id="formBaslik">➕ Yeni Ders Ekle</h2>
+      <div class="notice">
+        Notlarını 0 ile 100 arasında gir.
+        Genel ortalama kredi ağırlıklı hesaplanır.
+      </div>
+
+      <form id="dersForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="dersAdi">Ders Adı</label>
+            <input id="dersAdi" required
+              placeholder="İnternet Programcılığı">
+          </div>
+          <div class="field">
+            <label for="dersKodu">Ders Kodu</label>
+            <input id="dersKodu" required
+              placeholder="BIL101">
+          </div>
+          <div class="field">
+            <label for="dersKredi">Kredi</label>
+            <input id="dersKredi" type="number"
+              min="1" step="1" required placeholder="4">
+          </div>
+          <div class="field">
+            <label for="dersNotu">Not</label>
+            <input id="dersNotu" type="number"
+              min="0" max="100" step="0.01"
+              required placeholder="85">
+          </div>
+        </div>
+        <button class="primary" type="submit" id="kaydetBtn">
+          Dersi Kaydet
+        </button>
+        <button class="secondary" type="button"
+          id="iptalBtn" hidden>
+          İptal
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <section id="analiz" class="view">
+    <div class="panel">
+      <h2>📈 Not Analizi</h2>
+      <p class="subtitle">
+        Derslerinin 100 üzerinden not dağılımı
+      </p>
+      <div id="grafik"></div>
+    </div>
+    <div class="panel">
+      <h2>📊 Akademik Özet</h2>
+      <div id="analizOzeti"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const STORAGE_KEY = "dersler";
+let dersler = [];
+let duzenlenenIndex = null;
+
+try {
+  const kayit = JSON.parse(
+    localStorage.getItem(STORAGE_KEY) || "[]"
+  );
+  if (Array.isArray(kayit)) {
+    dersler = kayit.filter(d =>
+      d && typeof d.ad === "string" &&
+      typeof d.kod === "string" &&
+      Number.isFinite(Number(d.kredi)) &&
+      Number(d.kredi) > 0 &&
+      Number.isFinite(Number(d.not)) &&
+      Number(d.not) >= 0 &&
+      Number(d.not) <= 100
+    ).map(d => ({
+      ad: d.ad,
+      kod: d.kod,
+      kredi: Number(d.kredi),
+      not: Number(d.not)
+    }));
+  }
+} catch (hata) {
+  console.error("Kayıtlar okunamadı:", hata);
+}
+
+const basliklar = {
+  ana: ["Öğrenci Ders Takip Paneli",
+        "Derslerini yönet, notlarını takip et."],
+  dersler: ["Derslerim",
+            "Kayıtlı derslerini görüntüle ve düzenle."],
+  ekle: ["Ders Yönetimi",
+         "Yeni ders ekle veya mevcut dersi güncelle."],
+  analiz: ["Not Analizi",
+           "Derslerinin başarı grafiğini incele."]
+};
+
+function bolumeGit(id) {
+  document.querySelectorAll(".view").forEach(el => {
+    el.classList.toggle("active", el.id === id);
+  });
+
+  document.querySelectorAll(".menu").forEach(el => {
+    el.classList.toggle(
+      "active", el.dataset.view === id
+    );
+  });
+
+  document.getElementById("sayfaBaslik").textContent =
+    basliklar[id][0];
+  document.getElementById("sayfaAciklama").textContent =
+    basliklar[id][1];
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.querySelectorAll("[data-view]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    bolumeGit(btn.dataset.view);
+  });
+});
+
+document.querySelectorAll("[data-go]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    bolumeGit(btn.dataset.go);
+  });
+});
+
+function kaydet() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY, JSON.stringify(dersler)
+    );
+    return true;
+  } catch (hata) {
+    alert("Tarayıcıya kayıt yapılamadı.");
+    return false;
+  }
+}
+
+function hucreOlustur(satir, deger) {
+  const td = document.createElement("td");
+  td.textContent = String(deger);
+  satir.appendChild(td);
+  return td;
+}
+
+function guncelle() {
+  const toplamKredi = dersler.reduce(
+    (t, d) => t + d.kredi, 0
+  );
+  const toplamNot = dersler.reduce(
+    (t, d) => t + d.not * d.kredi, 0
+  );
+  const ortalama = toplamKredi
+    ? toplamNot / toplamKredi : 0;
+
+  document.getElementById("toplam").textContent =
+    dersler.length;
+  document.getElementById("kredi").textContent =
+    toplamKredi;
+  document.getElementById("ortalama").textContent =
+    ortalama.toFixed(2);
+
+  const liste = document.getElementById("dersListesi");
+  liste.replaceChildren();
+
+  const arama = document.getElementById("arama")
+    .value.toLocaleLowerCase("tr").trim();
+
+  let bulunan = 0;
+
+  dersler.forEach((ders, index) => {
+    if (!(`${ders.ad} ${ders.kod}`)
+      .toLocaleLowerCase("tr").includes(arama)) return;
+
+    bulunan++;
+    const satir = document.createElement("tr");
+
+    hucreOlustur(satir, ders.ad);
+    hucreOlustur(satir, ders.kod);
+    hucreOlustur(satir, ders.kredi);
+    hucreOlustur(satir, ders.not);
+
+    const islemler = document.createElement("td");
+    const grup = document.createElement("div");
+    grup.className = "actions";
+
+    const duzenleBtn = document.createElement("button");
+    duzenleBtn.className = "edit";
+    duzenleBtn.textContent = "Düzenle";
+    duzenleBtn.addEventListener("click", () => {
+      duzenle(index);
+    });
+
+    const silBtn = document.createElement("button");
+    silBtn.className = "danger";
+    silBtn.textContent = "Sil";
+    silBtn.addEventListener("click", () => {
+      if (confirm(ders.ad + " silinsin mi?")) {
+        dersler.splice(index, 1);
+        if (duzenlenenIndex === index) {
+          formuTemizle();
+        } else if (duzenlenenIndex !== null &&
+                   duzenlenenIndex > index) {
+          duzenlenenIndex--;
+        }
+        kaydet();
+        guncelle();
+      }
+    });
+
+    grup.append(duzenleBtn, silBtn);
+    islemler.appendChild(grup);
+    satir.appendChild(islemler);
+    liste.appendChild(satir);
+  });
+
+  document.getElementById("bosMesaj").hidden =
+    bulunan !== 0;
+
+  const ozet = document.getElementById("dersOzeti");
+  ozet.replaceChildren();
+
+  if (!dersler.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Henüz ders eklenmedi.";
+    ozet.appendChild(p);
+  } else {
+    const p = document.createElement("p");
+    p.textContent =
+      `${dersler.length} ders kayıtlı. ` +
+      `Genel ortalaman: ${ortalama.toFixed(2)} / 100`;
+    ozet.appendChild(p);
+  }
+
+  grafikleriGuncelle(ortalama);
+}
+
+function grafikleriGuncelle(ortalama) {
+  const grafik = document.getElementById("grafik");
+  grafik.replaceChildren();
+
+  if (!dersler.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Grafik için önce ders eklemelisin.";
+    grafik.appendChild(p);
+  }
+
+  dersler.forEach(ders => {
+    const satir = document.createElement("div");
+    satir.className = "chart-row";
+
+    const ad = document.createElement("span");
+    ad.className = "chart-name";
+    ad.textContent = ders.ad;
+
+    const track = document.createElement("div");
+    track.className = "chart-track";
+
+    const fill = document.createElement("div");
+    fill.className = "chart-fill";
+    fill.style.width = ders.not + "%";
+    track.appendChild(fill);
+
+    const not = document.createElement("strong");
+    not.textContent = ders.not;
+
+    satir.append(ad, track, not);
+    grafik.appendChild(satir);
+  });
+
+  const analiz = document.getElementById("analizOzeti");
+  analiz.replaceChildren();
+
+  const p = document.createElement("p");
+  p.textContent =
+    "Kredi ağırlıklı genel not ortalaman: " +
+    ortalama.toFixed(2) + " / 100";
+  analiz.appendChild(p);
+
+  if (dersler.length) {
+    const enYuksek = dersler.reduce(
+      (a, b) => a.not >= b.not ? a : b
+    );
+    const bilgi = document.createElement("p");
+    bilgi.textContent =
+      `En yüksek not: ${enYuksek.ad} (${enYuksek.not})`;
+    analiz.appendChild(bilgi);
+  }
+}
+
+function duzenle(index) {
+  const ders = dersler[index];
+  duzenlenenIndex = index;
+
+  document.getElementById("dersAdi").value = ders.ad;
+  document.getElementById("dersKodu").value = ders.kod;
+  document.getElementById("dersKredi").value = ders.kredi;
+  document.getElementById("dersNotu").value = ders.not;
+
+  document.getElementById("formBaslik").textContent =
+    "✏️ Dersi Düzenle";
+  document.getElementById("kaydetBtn").textContent =
+    "Değişiklikleri Kaydet";
+  document.getElementById("iptalBtn").hidden = false;
+
+  bolumeGit("ekle");
+}
+
+function formuTemizle() {
+  document.getElementById("dersForm").reset();
+  duzenlenenIndex = null;
+  document.getElementById("formBaslik").textContent =
+    "➕ Yeni Ders Ekle";
+  document.getElementById("kaydetBtn").textContent =
+    "Dersi Kaydet";
+  document.getElementById("iptalBtn").hidden = true;
+}
+
+document.getElementById("iptalBtn")
+  .addEventListener("click", formuTemizle);
+
+document.getElementById("arama")
+  .addEventListener("input", guncelle);
+
+document.getElementById("dersForm")
+  .addEventListener("submit", event => {
+    event.preventDefault();
+
+    const ad = document.getElementById("dersAdi")
+      .value.trim();
+    const kod = document.getElementById("dersKodu")
+      .value.trim();
+    const kredi = Number(
+      document.getElementById("dersKredi").value
+    );
+    const not = Number(
+      document.getElementById("dersNotu").value
+    );
+
+    if (!ad || !kod ||
+        !Number.isInteger(kredi) || kredi < 1 ||
+        !Number.isFinite(not) || not < 0 || not > 100) {
+      alert("Lütfen geçerli ders bilgileri gir.");
+      return;
+    }
+
+    const yeniDers = { ad, kod, kredi, not };
+    const onceki = [...dersler];
+
+    if (duzenlenenIndex === null) {
+      dersler.push(yeniDers);
+    } else {
+      dersler[duzenlenenIndex] = yeniDers;
+    }
+
+    if (!kaydet()) {
+      dersler = onceki;
+      return;
+    }
+
+    formuTemizle();
+    guncelle();
+    bolumeGit("dersler");
+  });
+
+guncelle();
+</script>
+</body>
+</html>
