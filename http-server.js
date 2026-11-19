@@ -1,5 +1,6 @@
 
 const express = require("express");
+const path = require("path");
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StreamableHTTPServerTransport } = require(
   "@modelcontextprotocol/sdk/server/streamableHttp.js"
@@ -45,6 +46,7 @@ function createServer() {
     },
     async ({ ad, not }) => {
       dersler.push({ ad, not });
+
       return {
         content: [{
           type: "text",
@@ -60,7 +62,10 @@ function createServer() {
       description: "Not ortalamasını hesaplar"
     },
     async () => {
-      const toplam = dersler.reduce((t, d) => t + d.not, 0);
+      const toplam = dersler.reduce(
+        (t, d) => t + d.not, 0
+      );
+
       const ortalama = dersler.length
         ? toplam / dersler.length
         : 0;
@@ -77,14 +82,21 @@ function createServer() {
   return server;
 }
 
+// EduTrack ana sayfası
 app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Sunucu durum bilgisi
+app.get("/api/status", (req, res) => {
   res.json({
-    proje: "Öğrenci Ders Takip MCP Sunucusu",
+    proje: "EduTrack Öğrenci Ders Takip",
     durum: "Çalışıyor",
     mcp_endpoint: "/mcp"
   });
 });
 
+// MCP bağlantısı
 app.post("/mcp", async (req, res) => {
   const server = createServer();
 
@@ -102,6 +114,7 @@ app.post("/mcp", async (req, res) => {
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
     console.error(error);
+
     if (!res.headersSent) {
       res.status(500).json({
         error: "Sunucu hatası"
@@ -121,5 +134,7 @@ app.delete("/mcp", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`MCP HTTP sunucusu ${PORT} portunda çalışıyor`);
+  console.log(
+    `EduTrack MCP sunucusu ${PORT} portunda çalışıyor`
+  );
 });
