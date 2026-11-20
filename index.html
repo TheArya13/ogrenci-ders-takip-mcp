@@ -14,7 +14,6 @@
   --muted: #7c849b;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
 body {
   margin: 0;
   font-family: "Segoe UI", Arial, sans-serif;
@@ -30,7 +29,6 @@ button { cursor: pointer; }
   padding: 30px 16px;
   background: var(--dark);
   color: white;
-  z-index: 5;
 }
 .logo {
   font-size: 27px;
@@ -47,7 +45,6 @@ button { cursor: pointer; }
   background: transparent;
   color: #eee;
   text-align: left;
-  font-size: 16px;
 }
 .menu:hover, .menu.active {
   background: var(--primary);
@@ -171,10 +168,7 @@ th, td {
 }
 th { color: var(--muted); }
 .search { max-width: 350px; margin-bottom: 20px; }
-.empty {
-  color: var(--muted);
-  padding: 25px 0;
-}
+.empty { color: var(--muted); padding: 25px 0; }
 .chart-row {
   display: grid;
   grid-template-columns: 180px 1fr 50px;
@@ -193,15 +187,18 @@ th { color: var(--muted); }
   background: linear-gradient(90deg, #7164e8, #a294ff);
   border-radius: 20px;
 }
-.chart-name {
-  overflow-wrap: anywhere;
-}
+.chart-name { overflow-wrap: anywhere; }
 .notice {
   background: #f0edff;
   color: #5144bb;
   padding: 17px;
   border-radius: 12px;
   margin-bottom: 20px;
+}
+#durum {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 15px;
 }
 @media (max-width: 1000px) {
   .form-grid { grid-template-columns: repeat(2, 1fr); }
@@ -232,21 +229,11 @@ th { color: var(--muted); }
 
 <aside class="sidebar">
   <div class="logo">🎓 EduTrack</div>
-  <button class="menu active" data-view="ana">
-    📊 Ana Panel
-  </button>
-  <button class="menu" data-view="dersler">
-    📚 Derslerim
-  </button>
-  <button class="menu" data-view="ekle">
-    ➕ Ders Ekle
-  </button>
-  <button class="menu" data-view="analiz">
-    📈 Not Analizi
-  </button>
-  <div class="sidebar-footer">
-    Öğrenci Ders Takip Sistemi
-  </div>
+  <button class="menu active" data-view="ana">📊 Ana Panel</button>
+  <button class="menu" data-view="dersler">📚 Derslerim</button>
+  <button class="menu" data-view="ekle">➕ Ders Ekle</button>
+  <button class="menu" data-view="analiz">📈 Not Analizi</button>
+  <div class="sidebar-footer">Öğrenci Ders Takip Sistemi</div>
 </aside>
 
 <main>
@@ -259,6 +246,8 @@ th { color: var(--muted); }
     </div>
     <span class="tag">🎓 EduTrack</span>
   </div>
+
+  <p id="durum">Sunucuya bağlanılıyor...</p>
 
   <section id="ana" class="view active">
     <div class="cards">
@@ -361,9 +350,7 @@ th { color: var(--muted); }
           Dersi Kaydet
         </button>
         <button class="secondary" type="button"
-          id="iptalBtn" hidden>
-          İptal
-        </button>
+          id="iptalBtn" hidden>İptal</button>
       </form>
     </div>
   </section>
@@ -386,44 +373,67 @@ th { color: var(--muted); }
 <script>
 "use strict";
 
-const STORAGE_KEY = "dersler";
 let dersler = [];
 let duzenlenenIndex = null;
 
-try {
-  const kayit = JSON.parse(
-    localStorage.getItem(STORAGE_KEY) || "[]"
-  );
-  if (Array.isArray(kayit)) {
-    dersler = kayit.filter(d =>
-      d && typeof d.ad === "string" &&
-      typeof d.kod === "string" &&
-      Number.isFinite(Number(d.kredi)) &&
-      Number(d.kredi) > 0 &&
-      Number.isFinite(Number(d.not)) &&
-      Number(d.not) >= 0 &&
-      Number(d.not) <= 100
-    ).map(d => ({
-      ad: d.ad,
-      kod: d.kod,
-      kredi: Number(d.kredi),
-      not: Number(d.not)
-    }));
-  }
-} catch (hata) {
-  console.error("Kayıtlar okunamadı:", hata);
+const basliklar = {
+  ana: [
+    "Öğrenci Ders Takip Paneli",
+    "Derslerini yönet, notlarını takip et."
+  ],
+  dersler: [
+    "Derslerim",
+    "Kayıtlı derslerini görüntüle ve düzenle."
+  ],
+  ekle: [
+    "Ders Yönetimi",
+    "Yeni ders ekle veya mevcut dersi güncelle."
+  ],
+  analiz: [
+    "Not Analizi",
+    "Derslerinin başarı grafiğini incele."
+  ]
+};
+
+function durumGoster(mesaj, hata = false) {
+  const alan = document.getElementById("durum");
+  alan.textContent = mesaj;
+  alan.style.color = hata ? "#d63d38" : "#7c849b";
 }
 
-const basliklar = {
-  ana: ["Öğrenci Ders Takip Paneli",
-        "Derslerini yönet, notlarını takip et."],
-  dersler: ["Derslerim",
-            "Kayıtlı derslerini görüntüle ve düzenle."],
-  ekle: ["Ders Yönetimi",
-         "Yeni ders ekle veya mevcut dersi güncelle."],
-  analiz: ["Not Analizi",
-           "Derslerinin başarı grafiğini incele."]
-};
+async function apiIstek(url, secenekler = {}) {
+  const cevap = await fetch(url, {
+    ...secenekler,
+    headers: {
+      "Content-Type": "application/json",
+      ...(secenekler.headers || {})
+    }
+  });
+
+  if (!cevap.ok) {
+    let mesaj = "Sunucu hatası: " + cevap.status;
+    try {
+      const veri = await cevap.json();
+      mesaj = veri.error || mesaj;
+    } catch (_) {}
+    throw new Error(mesaj);
+  }
+
+  return cevap.json();
+}
+
+async function dersleriYukle() {
+  try {
+    dersler = await apiIstek("/api/dersler");
+    durumGoster("Sunucu bağlantısı başarılı.");
+    guncelle();
+  } catch (hata) {
+    durumGoster(
+      "Dersler sunucudan yüklenemedi: " + hata.message,
+      true
+    );
+  }
+}
 
 function bolumeGit(id) {
   document.querySelectorAll(".view").forEach(el => {
@@ -456,18 +466,6 @@ document.querySelectorAll("[data-go]").forEach(btn => {
   });
 });
 
-function kaydet() {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY, JSON.stringify(dersler)
-    );
-    return true;
-  } catch (hata) {
-    alert("Tarayıcıya kayıt yapılamadı.");
-    return false;
-  }
-}
-
 function hucreOlustur(satir, deger) {
   const td = document.createElement("td");
   td.textContent = String(deger);
@@ -479,9 +477,11 @@ function guncelle() {
   const toplamKredi = dersler.reduce(
     (t, d) => t + d.kredi, 0
   );
+
   const toplamNot = dersler.reduce(
     (t, d) => t + d.not * d.kredi, 0
   );
+
   const ortalama = toplamKredi
     ? toplamNot / toplamKredi : 0;
 
@@ -526,17 +526,22 @@ function guncelle() {
     const silBtn = document.createElement("button");
     silBtn.className = "danger";
     silBtn.textContent = "Sil";
-    silBtn.addEventListener("click", () => {
-      if (confirm(ders.ad + " silinsin mi?")) {
-        dersler.splice(index, 1);
-        if (duzenlenenIndex === index) {
+
+    silBtn.addEventListener("click", async () => {
+      if (!confirm(ders.ad + " silinsin mi?")) return;
+
+      try {
+        await apiIstek("/api/dersler/" + index, {
+          method: "DELETE"
+        });
+
+        if (duzenlenenIndex !== null) {
           formuTemizle();
-        } else if (duzenlenenIndex !== null &&
-                   duzenlenenIndex > index) {
-          duzenlenenIndex--;
         }
-        kaydet();
-        guncelle();
+
+        await dersleriYukle();
+      } catch (hata) {
+        alert("Ders silinemedi: " + hata.message);
       }
     });
 
@@ -552,19 +557,18 @@ function guncelle() {
   const ozet = document.getElementById("dersOzeti");
   ozet.replaceChildren();
 
+  const p = document.createElement("p");
+
   if (!dersler.length) {
-    const p = document.createElement("p");
     p.className = "empty";
     p.textContent = "Henüz ders eklenmedi.";
-    ozet.appendChild(p);
   } else {
-    const p = document.createElement("p");
     p.textContent =
       `${dersler.length} ders kayıtlı. ` +
       `Genel ortalaman: ${ortalama.toFixed(2)} / 100`;
-    ozet.appendChild(p);
   }
 
+  ozet.appendChild(p);
   grafikleriGuncelle(ortalama);
 }
 
@@ -615,6 +619,7 @@ function grafikleriGuncelle(ortalama) {
     const enYuksek = dersler.reduce(
       (a, b) => a.not >= b.not ? a : b
     );
+
     const bilgi = document.createElement("p");
     bilgi.textContent =
       `En yüksek not: ${enYuksek.ad} (${enYuksek.not})`;
@@ -657,7 +662,7 @@ document.getElementById("arama")
   .addEventListener("input", guncelle);
 
 document.getElementById("dersForm")
-  .addEventListener("submit", event => {
+  .addEventListener("submit", async event => {
     event.preventDefault();
 
     const ad = document.getElementById("dersAdi")
@@ -679,25 +684,34 @@ document.getElementById("dersForm")
     }
 
     const yeniDers = { ad, kod, kredi, not };
-    const onceki = [...dersler];
+    const kaydetBtn = document.getElementById("kaydetBtn");
+    kaydetBtn.disabled = true;
 
-    if (duzenlenenIndex === null) {
-      dersler.push(yeniDers);
-    } else {
-      dersler[duzenlenenIndex] = yeniDers;
+    try {
+      const duzenleme = duzenlenenIndex !== null;
+
+      await apiIstek(
+        duzenleme
+          ? "/api/dersler/" + duzenlenenIndex
+          : "/api/dersler",
+        {
+          method: duzenleme ? "PUT" : "POST",
+          body: JSON.stringify(yeniDers)
+        }
+      );
+
+      formuTemizle();
+      await dersleriYukle();
+      bolumeGit("dersler");
+    } catch (hata) {
+      alert("Ders kaydedilemedi: " + hata.message);
+    } finally {
+      kaydetBtn.disabled = false;
     }
-
-    if (!kaydet()) {
-      dersler = onceki;
-      return;
-    }
-
-    formuTemizle();
-    guncelle();
-    bolumeGit("dersler");
   });
 
 guncelle();
+dersleriYukle();
 </script>
 </body>
 </html>
